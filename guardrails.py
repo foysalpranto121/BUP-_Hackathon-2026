@@ -143,7 +143,7 @@ def validate_directive_interpretations(
 
 def parse_time_window(text: str) -> List[int]:
     """
-    Regex-based time window parser helper for whole-hour start-inclusive, end-exclusive windows.
+    Regex-based time window parser helper for whole-hour start-inclusive, end-inclusive windows.
     """
     text_lower = text.lower()
 
@@ -151,8 +151,8 @@ def parse_time_window(text: str) -> List[int]:
     match_24 = re.search(r'(\d{1,2}):00\s*(?:to|-|until|and)\s*(\d{1,2}):00', text_lower)
     if match_24:
         start, end = int(match_24.group(1)), int(match_24.group(2))
-        if 0 <= start < end <= 24:
-            return list(range(start, end))
+        if 0 <= start <= end <= 23:
+            return list(range(start, end + 1))
 
     # Normalize 'noon' -> '12 PM', 'midnight' -> '12 AM'
     normalized = text_lower.replace("noon", "12 pm").replace("midnight", "12 am")
@@ -173,8 +173,8 @@ def parse_time_window(text: str) -> List[int]:
 
         start = _to_24h(h1, p1)
         end = _to_24h(h2, p2)
-        if 0 <= start < end <= 24:
-            return list(range(start, end))
+        if 0 <= start <= end <= 23:
+            return list(range(start, end + 1))
 
     return []
 
