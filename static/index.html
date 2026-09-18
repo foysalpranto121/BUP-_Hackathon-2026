@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GridWise — Enterprise Smart Campus Energy Command Center</title>
+  <meta name="description" content="Interactive Smart Campus Energy Optimizer & LLM Directive Processing Platform">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/styles.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-content">
+      <div class="brand-wrapper">
+        <div class="brand-logo">⚡</div>
+        <div class="brand-title">
+          <h1>GridWise Command Center</h1>
+          <div class="brand-subtitle">Interactive Smart Campus Energy Optimization • BUP CSE FEST 2026</div>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <div class="status-indicator">
+          <span class="status-ping"></span>
+          <span id="providerBadge">API Online • LLM Active</span>
+        </div>
+        <a href="/docs" target="_blank" class="nav-link-btn">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+          OpenAPI Docs
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <div class="dashboard-container">
+
+    <!-- Simulation Action Bar -->
+    <section class="sim-bar">
+      <div class="sim-label">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        Interactive Scenario Simulators:
+      </div>
+      <div class="sim-btn-group">
+        <button type="button" onclick="simulateScenario('solar_boost')" class="sim-btn">☀️ Solar Boost (+50%)</button>
+        <button type="button" onclick="simulateScenario('grid_cap')" class="sim-btn">⚡ Grid Intake Cap</button>
+        <button type="button" onclick="simulateScenario('emergency_reserve')" class="sim-btn">🔋 Reserve Spike</button>
+        <button type="button" onclick="simulateScenario('tariff_surge')" class="sim-btn">🔥 Tariff Surge</button>
+      </div>
+
+      <div class="switch-wrapper">
+        <span>Auto-Optimize on Edit</span>
+        <label class="switch">
+          <input type="checkbox" id="autoOptToggle" checked>
+          <span class="slider-round"></span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Executive KPI Row -->
+    <section class="kpi-row">
+      <div class="kpi-card-pro" style="--kpi-accent: #38bdf8;">
+        <div class="kpi-header">
+          <span class="kpi-label">Total Electricity Cost</span>
+          <div class="kpi-icon-wrap">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+        </div>
+        <div class="kpi-main-val">
+          <span id="kpiCost">0.00</span> <span style="font-size: 0.85rem; color: var(--text-muted);">BDT</span>
+          <span class="savings-badge" id="kpiSavingsBadge">-0.0% Saved</span>
+        </div>
+        <div class="kpi-sub-text" id="kpiUnoptimizedSub">Unoptimized: 0.00 BDT</div>
+      </div>
+
+      <div class="kpi-card-pro" style="--kpi-accent: #10b981;">
+        <div class="kpi-header">
+          <span class="kpi-label">Grid Energy Purchased</span>
+          <div class="kpi-icon-wrap">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          </div>
+        </div>
+        <div class="kpi-main-val"><span id="kpiGrid">0.0</span> <span style="font-size: 0.85rem; color: var(--text-muted);">kWh</span></div>
+        <div class="kpi-sub-text">24-hour grid import</div>
+      </div>
+
+      <div class="kpi-card-pro" style="--kpi-accent: #f59e0b;">
+        <div class="kpi-header">
+          <span class="kpi-label">Peak Grid Demand</span>
+          <div class="kpi-icon-wrap">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+          </div>
+        </div>
+        <div class="kpi-main-val"><span id="kpiPeak">0.0</span> <span style="font-size: 0.85rem; color: var(--text-muted);">kWh</span></div>
+        <div class="kpi-sub-text" id="kpiPeakHour">Peak hourly load</div>
+      </div>
+
+      <div class="kpi-card-pro" style="--kpi-accent: #a855f7;">
+        <div class="kpi-header">
+          <span class="kpi-label">Directives Applied</span>
+          <div class="kpi-icon-wrap">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+        </div>
+        <div class="kpi-main-val"><span id="kpiDirectivesCount">0 / 0</span></div>
+        <div class="kpi-sub-text" id="kpiDirectivesSub">LLM parsed & guardrailed</div>
+      </div>
+    </section>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+
+      <!-- Left Control Panel -->
+      <aside class="control-panel">
+        <div class="panel-heading">
+          <h3>
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+            Scenario Control Center
+          </h3>
+          <span class="mono-font" style="font-size: 0.75rem; color: var(--primary);" id="latencyBadge">-- ms</span>
+        </div>
+
+        <!-- Presets Selector -->
+        <div class="preset-selector-group">
+          <span class="section-label">Preset Public Cases (Sample 01 – 10)</span>
+          <div class="preset-scroll-chips" id="presetChipsContainer">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <form id="optForm" style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- Scenario ID -->
+          <div class="form-field">
+            <label for="scenarioId">Scenario Identifier</label>
+            <input type="text" id="scenarioId" class="input-styled mono-font" value="GRID-101" required>
+          </div>
+
+          <!-- Operator Notes -->
+          <div class="form-field">
+            <label for="operatorNotes">Campus Operator Directives (Natural Language)</label>
+            <textarea id="operatorNotes" class="input-styled" placeholder="Enter operator notes (1-3 lines)..."></textarea>
+          </div>
+
+          <!-- Battery Configuration -->
+          <div class="form-field">
+            <label>Battery Energy Storage System (BESS)</label>
+            <div class="battery-grid">
+              <div>
+                <span style="font-size: 0.7rem; color: var(--text-dim);">Capacity (kWh)</span>
+                <input type="number" id="batCapacity" class="input-styled mono-font" value="500" step="any" required>
+              </div>
+              <div>
+                <span style="font-size: 0.7rem; color: var(--text-dim);">Initial Energy (kWh)</span>
+                <input type="number" id="batInitial" class="input-styled mono-font" value="200" step="any" required>
+              </div>
+              <div>
+                <span style="font-size: 0.7rem; color: var(--text-dim);">Min Reserve (kWh)</span>
+                <input type="number" id="batMinReserve" class="input-styled mono-font" value="50" step="any" required>
+              </div>
+              <div>
+                <span style="font-size: 0.7rem; color: var(--text-dim);">Max Rate (kWh/h)</span>
+                <input type="number" id="batMaxRate" class="input-styled mono-font" value="100" step="any" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit CTA Button -->
+          <button type="submit" id="execBtn" class="btn-execute">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            Execute LLM & LP Optimization
+          </button>
+        </form>
+      </aside>
+
+      <!-- Right Multi-Tab View Panel -->
+      <main class="viz-panel">
+        <div class="tab-header-bar">
+          <div class="tab-nav">
+            <button class="tab-btn active" data-tab="tabAnalytics">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+              Dispatch Analytics
+            </button>
+            <button class="tab-btn" data-tab="tabDirectives">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              Directives Guardrail
+            </button>
+            <button class="tab-btn" data-tab="tabTable">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 10h18M3 14h18M3 18h18M3 6h18"></path></svg>
+              24h Schedule Table
+            </button>
+            <button class="tab-btn" data-tab="tabJson">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+              JSON Inspector
+            </button>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem;">
+            <button onclick="copyResponseData()" class="nav-link-btn" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">
+              Copy Response
+            </button>
+          </div>
+        </div>
+
+        <!-- Strategy Summary Card -->
+        <div style="background: rgba(6, 9, 19, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.9rem 1.25rem;">
+          <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">AI Dispatch Strategy Explanation</span>
+          <p id="strategySummaryText" style="font-size: 0.9rem; color: #e2e8f0; margin-top: 0.2rem; line-height: 1.4;">
+            Execute scenario optimization to generate the natural language strategy explanation.
+          </p>
+        </div>
+
+        <!-- TAB 1: Dispatch Analytics (Dual Charts + Live Hourly Slider) -->
+        <div id="tabAnalytics" class="tab-content active">
+          
+          <!-- Live Interactive Hour Parameter Slider Bar -->
+          <div class="interactive-slider-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.82rem; font-weight: 700; color: var(--primary);">Live Interactive Hourly Parameter Modifier: <span id="selectedHourLabel" class="mono-font" style="color: #ffffff;">Hour 12:00</span></span>
+              <span style="font-size: 0.75rem; color: var(--text-dim);">Drag sliders to modify parameters in real-time</span>
+            </div>
+
+            <!-- Hour Selector Slider -->
+            <div>
+              <input type="range" id="hourSlider" class="range-slider" min="0" max="23" value="12" oninput="onHourSliderChange(this.value)">
+            </div>
+
+            <div class="slider-controls-grid">
+              <div>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">Demand (kWh): <strong id="lblDemandVal" class="mono-font" style="color: var(--primary);">180</strong></span>
+                <input type="range" id="sliderDemand" class="range-slider" min="10" max="400" value="180" oninput="onParamSliderChange()">
+              </div>
+              <div>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">Solar (kWh): <strong id="lblSolarVal" class="mono-font" style="color: #34d399;">200</strong></span>
+                <input type="range" id="sliderSolar" class="range-slider" min="0" max="400" value="200" oninput="onParamSliderChange()">
+              </div>
+              <div>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">Tariff (BDT): <strong id="lblTariffVal" class="mono-font" style="color: #fb7185;">17</strong></span>
+                <input type="range" id="sliderTariff" class="range-slider" min="1" max="50" value="17" oninput="onParamSliderChange()">
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 1: Energy Balance -->
+          <div class="chart-box">
+            <div class="chart-title">
+              <span>24-Hour Energy Generation vs Campus Load Balance (kWh)</span>
+              <span style="font-size: 0.75rem; color: var(--text-dim);">Stacked Dispatch Breakdown</span>
+            </div>
+            <div class="canvas-container">
+              <canvas id="chartEnergyBalance"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 2: Battery Storage Dynamics -->
+          <div class="chart-box" style="margin-bottom: 0;">
+            <div class="chart-title">
+              <span>Battery Energy Storage System (BESS) Dynamics & State of Charge</span>
+              <span style="font-size: 0.75rem; color: var(--text-dim);">SOC Trajectory & Rate Limits</span>
+            </div>
+            <div class="canvas-container">
+              <canvas id="chartBatterySOC"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: Directives Guardrail -->
+        <div id="tabDirectives" class="tab-content">
+          <div id="directivesContainer">
+            <!-- Dynamically populated directives -->
+          </div>
+        </div>
+
+        <!-- TAB 3: 24h Schedule Table -->
+        <div id="tabTable" class="tab-content">
+          <div class="table-wrapper">
+            <table class="pro-table">
+              <thead>
+                <tr>
+                  <th>Hour</th>
+                  <th>Campus Demand</th>
+                  <th>Effective Solar</th>
+                  <th>Grid Purchased</th>
+                  <th>Solar Used</th>
+                  <th>Battery Action</th>
+                  <th>Battery SOC</th>
+                  <th>Tariff Rate</th>
+                </tr>
+              </thead>
+              <tbody id="scheduleTableBody">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 4: JSON Inspector -->
+        <div id="tabJson" class="tab-content">
+          <pre class="json-code-block" id="rawJsonDisplay">// Optimization Response JSON will appear here...</pre>
+        </div>
+
+      </main>
+
+    </div>
+
+  </div>
+
+  <!-- JS -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

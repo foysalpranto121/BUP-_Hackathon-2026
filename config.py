@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     MODEL_NAME: str = os.getenv("MODEL_NAME", "gemini-2.5-flash")
     HOST: str = os.getenv("HOST", "0.0.0.0")
-    PORT: int = int(os.getenv("PORT", "8000"))
+    PORT: int = int(os.getenv("PORT", "8001"))
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     
     class Config:

@@ -5,11 +5,12 @@ services:
     build: .
     container_name: gridwise_energy_optimizer
     ports:
-      - "8000:8000"
+      - "8001:8001"
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - MODEL_NAME=${MODEL_NAME:-gemini-2.5-flash}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
       - HOST=0.0.0.0
-      - PORT=8000
+      - PORT=8001
       - LOG_LEVEL=INFO
     restart: unless-stopped
