@@ -20,10 +20,12 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Mount static files
-STATIC_DIR = Path(__file__).parent / "static"
+# Robust path resolution for local & Vercel serverless
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+
 if STATIC_DIR.exists():
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 @app.get("/", response_class=FileResponse)
@@ -31,7 +33,7 @@ def read_root():
     """Serves the rich interactive Web UI dashboard."""
     index_path = STATIC_DIR / "index.html"
     if index_path.exists():
-        return FileResponse(index_path)
+        return FileResponse(str(index_path))
     return JSONResponse(content={"message": "GridWise Optimizer API Ready", "docs": "/docs"})
 
 
@@ -44,7 +46,7 @@ def health_check():
 @app.get("/api/sample-cases")
 def get_sample_cases():
     """Returns sample cases for the UI dashboard selector."""
-    sample_file = Path(__file__).parent / "BUP_CSE_FEST_2026_Preli_Public_Sample_Cases.json"
+    sample_file = BASE_DIR / "BUP_CSE_FEST_2026_Preli_Public_Sample_Cases.json"
     if sample_file.exists():
         with open(sample_file, "r", encoding="utf-8") as f:
             data = json.load(f)
