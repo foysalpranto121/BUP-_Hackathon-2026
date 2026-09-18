@@ -82,11 +82,17 @@ def optimize_energy(scenario: EnergyScenario):
 
 @app.exception_handler(RequestValidationError)
 def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """Handles malformed JSON or structurally invalid requests returning HTTP 400."""
+    """Handles malformed JSON or structurally invalid requests returning HTTP 400 with detailed field context."""
     logger.warning(f"Request validation error on {request.url.path}: {exc}")
+    err_msgs = []
+    for err in exc.errors():
+        loc = " -> ".join(str(l) for l in err.get("loc", []))
+        msg = err.get("msg", "invalid input")
+        err_msgs.append(f"{loc}: {msg}")
+    detail_msg = "; ".join(err_msgs) if err_msgs else "Malformed JSON or structurally invalid request."
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
-        content={"detail": "Malformed JSON or structurally invalid request.", "errors": str(exc)}
+        content={"detail": detail_msg, "errors": str(exc)}
     )
 
 

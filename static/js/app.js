@@ -186,7 +186,14 @@ function reapplyActiveScenarios() {
   // Start with clean deep copy of base preset
   currentScenarioInput = JSON.parse(JSON.stringify(basePresetInput));
 
-  const notesList = [...basePresetInput.operator_notes];
+  const simNotes = [];
+  if (activeSimScenarios.grid_cap) {
+    simNotes.push("From 6 PM until 9 PM, campus grid import must not exceed 100 kWh in any hour.");
+  }
+
+  if (activeSimScenarios.emergency_reserve) {
+    simNotes.push("Keep at least 150 kWh in the battery from 5 PM until 10 PM for emergency operations.");
+  }
 
   if (activeSimScenarios.solar_boost) {
     currentScenarioInput.hours.forEach(h => {
@@ -202,16 +209,14 @@ function reapplyActiveScenarios() {
     });
   }
 
-  if (activeSimScenarios.grid_cap) {
-    notesList.unshift("From 6 PM until 9 PM, campus grid import must not exceed 100 kWh in any hour.");
+  // Combine sim notes with base notes, max 3 total notes (Pydantic constraint)
+  let combinedNotes = [...simNotes, ...basePresetInput.operator_notes];
+  if (combinedNotes.length > 3) {
+    combinedNotes = combinedNotes.slice(0, 3);
   }
 
-  if (activeSimScenarios.emergency_reserve) {
-    notesList.unshift("Keep at least 150 kWh in the battery from 5 PM until 10 PM for emergency operations.");
-  }
-
-  currentScenarioInput.operator_notes = notesList;
-  document.getElementById("operatorNotes").value = notesList.join("\n");
+  currentScenarioInput.operator_notes = combinedNotes;
+  document.getElementById("operatorNotes").value = combinedNotes.join("\n");
 
   updateSimUIState();
   updateSliderControlsForHour(selectedHour);
@@ -251,12 +256,26 @@ function updateSimUIState() {
 function buildPayload() {
   const scenarioId = document.getElementById("scenarioId").value.trim() || "GRID-101";
   const notesStr = document.getElementById("operatorNotes").value.trim();
-  const operatorNotes = notesStr.split("\n").map(s => s.trim()).filter(s => s.length > 0);
+  let operatorNotes = notesStr.split("\n").map(s => s.trim()).filter(s => s.length > 0);
 
-  const cap = parseFloat(document.getElementById("batCapacity").value) || 200;
-  const initE = parseFloat(document.getElementById("batInitial").value) || 100;
-  const minR = parseFloat(document.getElementById("batMinReserve").value) || 40;
-  const maxR = parseFloat(document.getElementById("batMaxRate").value) || 50;
+  // Guarantee 1 to 3 notes for backend schema validity
+  if (operatorNotes.length === 0) {
+    operatorNotes = ["Routine campus operations; no special directive."];
+  } else if (operatorNotes.length > 3) {
+    operatorNotes = operatorNotes.slice(0, 3);
+  }
+
+  const cap = Math.max(1, parseFloat(document.getElementById("batCapacity").value) || 200);
+  let initE = parseFloat(document.getElementById("batInitial").value);
+  if (isNaN(initE) || initE < 0) initE = 100;
+  if (initE > cap) initE = cap;
+
+  let minR = parseFloat(document.getElementById("batMinReserve").value);
+  if (isNaN(minR) || minR < 0) minR = 40;
+  if (minR > cap) minR = cap;
+
+  let maxR = parseFloat(document.getElementById("batMaxRate").value);
+  if (isNaN(maxR) || maxR < 0) maxR = 50;
 
   const battery = {
     capacity_kwh: cap,
