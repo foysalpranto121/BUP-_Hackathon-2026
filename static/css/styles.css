@@ -292,56 +292,136 @@ h1, h2, h3, h4, .brand-font {
 
 /* Simulation Action Bar */
 .sim-bar {
-  background: var(--bg-card);
+  background: rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
-  padding: 0.85rem 1.25rem;
+  padding: 1rem 1.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .sim-label {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: #e2e8f0;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
+}
+
+.sim-active-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--primary);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  margin-left: 0.25rem;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .sim-btn-group {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.65rem;
   flex-wrap: wrap;
 }
 
 .sim-btn {
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  padding: 0.4rem 0.85rem;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  padding: 0.55rem 1rem;
   border-radius: var(--radius-md);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition);
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.45rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  position: relative;
+  user-select: none;
 }
 
 .sim-btn:hover {
-  background: rgba(56, 189, 248, 0.2);
-  border-color: var(--primary);
-  color: var(--primary);
+  transform: translateY(-2px);
+}
+
+/* Amber - Solar Boost */
+.sim-btn-amber {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+}
+.sim-btn-amber:hover, .sim-btn-amber.active {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: #f59e0b;
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.35);
+}
+
+/* Cyan - Grid Intake Cap */
+.sim-btn-cyan {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #bae6fd;
+}
+.sim-btn-cyan:hover, .sim-btn-cyan.active {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(56, 189, 248, 0.35);
+}
+
+/* Violet - Reserve Spike */
+.sim-btn-violet {
+  background: rgba(168, 85, 247, 0.08);
+  border-color: rgba(168, 85, 247, 0.35);
+  color: #e9d5ff;
+}
+.sim-btn-violet:hover, .sim-btn-violet.active {
+  background: rgba(168, 85, 247, 0.22);
+  border-color: #a855f7;
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(168, 85, 247, 0.35);
+}
+
+/* Rose - Tariff Surge */
+.sim-btn-rose {
+  background: rgba(244, 63, 94, 0.08);
+  border-color: rgba(244, 63, 94, 0.35);
+  color: #fecdd3;
+}
+.sim-btn-rose:hover, .sim-btn-rose.active {
+  background: rgba(244, 63, 94, 0.22);
+  border-color: #f43f5e;
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(244, 63, 94, 0.35);
+}
+
+/* Reset Button */
+.sim-btn-reset {
+  background: rgba(100, 116, 139, 0.12);
+  border-color: rgba(100, 116, 139, 0.3);
+  color: #94a3b8;
+}
+.sim-btn-reset:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  box-shadow: 0 2px 12px rgba(255, 255, 255, 0.15);
 }
 
 /* Toggle Switch */
@@ -349,15 +429,15 @@ h1, h2, h3, h4, .brand-font {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: #cbd5e1;
 }
 
 .switch {
   position: relative;
   display: inline-block;
-  width: 38px;
+  width: 40px;
   height: 22px;
 }
 
@@ -371,7 +451,7 @@ h1, h2, h3, h4, .brand-font {
   position: absolute;
   cursor: pointer;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.2);
   transition: .3s;
   border-radius: 34px;
 }
@@ -393,7 +473,7 @@ input:checked + .slider-round {
 }
 
 input:checked + .slider-round:before {
-  transform: translateX(16px);
+  transform: translateX(18px);
 }
 
 /* Content Grid: Left Control Panel & Right Multi-Tab View */
@@ -824,7 +904,7 @@ textarea.input-styled {
   to { transform: rotate(360deg); }
 }
 
-/* --- Comprehensive Mobile Responsiveness Media Queries --- */
+/* --- Mobile Responsiveness Media Queries --- */
 
 @media (max-width: 1200px) {
   .content-grid {

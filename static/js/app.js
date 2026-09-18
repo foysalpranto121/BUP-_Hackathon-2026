@@ -66,11 +66,29 @@ function renderPresetChips() {
   });
 }
 
+let basePresetInput = null;
+let activeSimScenarios = {
+  solar_boost: false,
+  grid_cap: false,
+  emergency_reserve: false,
+  tariff_surge: false
+};
+
 function loadPresetCase(idx) {
   const c = sampleCasesData[idx];
   if (!c) return;
 
+  basePresetInput = JSON.parse(JSON.stringify(c.input));
   currentScenarioInput = JSON.parse(JSON.stringify(c.input));
+
+  // Reset active scenario flags on preset change
+  activeSimScenarios = {
+    solar_boost: false,
+    grid_cap: false,
+    emergency_reserve: false,
+    tariff_surge: false
+  };
+  updateSimUIState();
 
   document.querySelectorAll(".preset-badge-btn").forEach((btn, i) => {
     btn.classList.toggle("active", i === idx);
@@ -141,19 +159,42 @@ function debounceAutoOptimize() {
 }
 
 function simulateScenario(type) {
-  if (!currentScenarioInput) return;
+  if (!basePresetInput) return;
 
-  if (type === 'solar_boost') {
+  // Toggle scenario state
+  activeSimScenarios[type] = !activeSimScenarios[type];
+  reapplyActiveScenarios();
+  executeOptimization(false);
+}
+
+function resetSimScenarios() {
+  if (!basePresetInput) return;
+
+  activeSimScenarios = {
+    solar_boost: false,
+    grid_cap: false,
+    emergency_reserve: false,
+    tariff_surge: false
+  };
+  reapplyActiveScenarios();
+  executeOptimization(false);
+}
+
+function reapplyActiveScenarios() {
+  if (!basePresetInput) return;
+
+  // Start with clean deep copy of base preset
+  currentScenarioInput = JSON.parse(JSON.stringify(basePresetInput));
+
+  const notesList = [...basePresetInput.operator_notes];
+
+  if (activeSimScenarios.solar_boost) {
     currentScenarioInput.hours.forEach(h => {
       h.solar_kwh = Math.round(h.solar_kwh * 1.5);
     });
-  } else if (type === 'grid_cap') {
-    const existingNotes = document.getElementById("operatorNotes").value;
-    document.getElementById("operatorNotes").value = "From 6 PM until 9 PM, campus grid import must not exceed 100 kWh in any hour.\n" + existingNotes;
-  } else if (type === 'emergency_reserve') {
-    const existingNotes = document.getElementById("operatorNotes").value;
-    document.getElementById("operatorNotes").value = "Keep at least 150 kWh in the battery from 5 PM until 10 PM for emergency operations.\n" + existingNotes;
-  } else if (type === 'tariff_surge') {
+  }
+
+  if (activeSimScenarios.tariff_surge) {
     currentScenarioInput.hours.forEach(h => {
       if (h.hour >= 18 && h.hour <= 21) {
         h.tariff_bdt_per_kwh = Math.round(h.tariff_bdt_per_kwh * 2.5);
@@ -161,8 +202,50 @@ function simulateScenario(type) {
     });
   }
 
+  if (activeSimScenarios.grid_cap) {
+    notesList.unshift("From 6 PM until 9 PM, campus grid import must not exceed 100 kWh in any hour.");
+  }
+
+  if (activeSimScenarios.emergency_reserve) {
+    notesList.unshift("Keep at least 150 kWh in the battery from 5 PM until 10 PM for emergency operations.");
+  }
+
+  currentScenarioInput.operator_notes = notesList;
+  document.getElementById("operatorNotes").value = notesList.join("\n");
+
+  updateSimUIState();
   updateSliderControlsForHour(selectedHour);
-  executeOptimization(false);
+}
+
+function updateSimUIState() {
+  const btnSolar = document.getElementById("btnSimSolar");
+  const btnGridCap = document.getElementById("btnSimGridCap");
+  const btnReserve = document.getElementById("btnSimReserve");
+  const btnTariff = document.getElementById("btnSimTariff");
+  const badge = document.getElementById("simActiveStatus");
+
+  if (btnSolar) btnSolar.classList.toggle("active", activeSimScenarios.solar_boost);
+  if (btnGridCap) btnGridCap.classList.toggle("active", activeSimScenarios.grid_cap);
+  if (btnReserve) btnReserve.classList.toggle("active", activeSimScenarios.emergency_reserve);
+  if (btnTariff) btnTariff.classList.toggle("active", activeSimScenarios.tariff_surge);
+
+  const activeNames = [];
+  if (activeSimScenarios.solar_boost) activeNames.push("Solar Boost (+50%)");
+  if (activeSimScenarios.grid_cap) activeNames.push("Grid Cap");
+  if (activeSimScenarios.emergency_reserve) activeNames.push("Reserve Spike");
+  if (activeSimScenarios.tariff_surge) activeNames.push("Tariff Surge");
+
+  if (badge) {
+    if (activeNames.length > 0) {
+      badge.textContent = `Active (${activeNames.length}): ${activeNames.join(", ")}`;
+      badge.style.color = "#38bdf8";
+      badge.style.borderColor = "rgba(56, 189, 248, 0.4)";
+    } else {
+      badge.textContent = "Baseline";
+      badge.style.color = "var(--text-muted)";
+      badge.style.borderColor = "rgba(255, 255, 255, 0.1)";
+    }
+  }
 }
 
 function buildPayload() {
