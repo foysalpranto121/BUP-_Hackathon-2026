@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Vercel deployment artifacts
+.vercel
+
 # Python bytecode and caches
 __pycache__/
 *.pyc

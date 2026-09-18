@@ -1,7 +1,7 @@
 # GridWise Smart Campus Energy Optimization System
 ### BUP CSE Fest 2026 Hackathon — Online Preliminary Solution
 
-A production-ready HTTP API service that accepts 24-hour campus energy scenarios with natural-language operator notes, interprets notes using LLM structured extraction with deterministic guardrails, and solves the cost-minimizing 24-hour energy schedule using exact Linear Programming (LP).
+A production-ready HTTP API service & interactive command center web application that accepts 24-hour campus energy scenarios with natural-language operator notes, interprets notes using LLM structured extraction with deterministic guardrails, and solves the cost-minimizing 24-hour energy schedule using exact Linear Programming (LP).
 
 ---
 
@@ -20,29 +20,57 @@ A production-ready HTTP API service that accepts 24-hour campus energy scenarios
  └────────────────┘     └────────────────┘     └────────────────────┘
 ```
 
-1. **API Layer (FastAPI & Pydantic)**: Exposes `GET /health` and `POST /optimize-energy`. Strictly validates JSON shapes and handles invalid requests with HTTP 400/500 without leaking credentials.
-2. **LLM Interpreter Engine**: Converts 1–3 natural-language operator notes into structured directives using Google Gemini (`gemini-2.5-flash`). Features a rule-based fallback parser for offline testing or network failures.
+1. **API & UI Layer (FastAPI & Pydantic)**: Exposes `GET /` (Interactive Web Dashboard), `GET /health`, and `POST /optimize-energy`. Strictly validates JSON shapes and handles invalid requests cleanly.
+2. **LLM Interpreter Engine**: Converts 1–3 natural-language operator notes into structured directives using OpenAI (`gpt-4o-mini`) or Google Gemini (`gemini-2.5-flash`). Features an offline rule-based fallback parser for local testing or network failures.
 3. **Deterministic Guardrails**: Validates note mapping order, unique ascending hour ranges (`[0..23]`), factor bounds (`0.0 <= factor <= 1.0`), and enforces `applies = false` for `no_op`.
-4. **Linear Programming (LP) Optimizer**: Uses `PuLP` (with CBC solver) or `SciPy.optimize.linprog` to solve the 24-hour schedule in milliseconds, guaranteeing global cost minimization while satisfying all energy balance, battery capacity, rate limits, reserve levels, and operator directives.
+4. **Linear Programming (LP) Optimizer**: Uses `PuLP` or `SciPy.optimize.linprog` to solve the 24-hour schedule in milliseconds, guaranteeing global cost minimization.
 
 ---
 
-## 🚀 Quickstart & Local Setup
+## 🌐 Deploying on Vercel (Step-by-Step)
 
-### Prerequisites
-- Python 3.9+
-- Docker & Docker Compose (optional for containerized run)
+The repository includes a pre-configured `vercel.json` for seamless Vercel deployment.
 
-### Local Environment Setup
+### Option A: Deploy via GitHub (Recommended)
+1. Push your repository to GitHub:
+   ```bash
+   git add vercel.json .gitignore README.md
+   git commit -m "Configure project for Vercel deployment"
+   git push origin main
+   ```
+2. Go to [Vercel Dashboard](https://vercel.com/new) and select **Import Repository**.
+3. Set Environment Variables in Vercel Project Settings:
+   - `OPENAI_API_KEY`: `your_openai_api_key`
+   - `LLM_PROVIDER`: `openai`
+   - `OPENAI_MODEL`: `gpt-4o-mini`
+4. Click **Deploy**. Vercel will automatically build the Python Serverless Function and serve your UI at `https://your-project.vercel.app/`.
+
+### Option B: Deploy via Vercel CLI
+```bash
+# 1. Install Vercel CLI
+npm i -g vercel
+
+# 2. Log in and deploy
+vercel
+
+# 3. Add production secrets
+vercel env add OPENAI_API_KEY
+vercel --prod
+```
+
+---
+
+## 🚀 Local Development Setup
+
 ```bash
 # 1. Clone/Navigate to repository
 cd "m:/BUP Hackathon"
 
 # 2. Create virtual environment
 python -m venv venv
-# On Windows:
+# Windows:
 venv\Scripts\activate
-# On Linux/macOS:
+# Linux/macOS:
 source venv/bin/activate
 
 # 3. Install dependencies
@@ -50,109 +78,24 @@ pip install -r requirements.txt
 
 # 4. Configure environment variables
 cp .env.example .env
-# Edit .env and set GEMINI_API_KEY
-```
 
-### Running the API Service
-```bash
+# 5. Run local server
 python main.py
-# Or with uvicorn directly:
-uvicorn main:app --host 0.0.0.0 --port 8000
 ```
-Service will be available at `http://localhost:8000`.
+Access local dashboard at `http://localhost:8001`.
 
 ---
 
 ## 🧪 Testing & Verification
 
-### Running Automated Test Suite
-Run the test suite against all 10 public sample scenarios in `BUP_CSE_FEST_2026_Preli_Public_Sample_Cases.json`:
+Run the test suite against all 10 public sample scenarios:
 ```bash
 pytest tests/test_sample_cases.py -v
-```
-
-### Manual API Testing
-
-#### Health Check Endpoint (`GET /health`)
-```bash
-curl http://localhost:8000/health
-```
-**Expected Response (HTTP 200)**:
-```json
-{
-  "status": "ok"
-}
-```
-
-#### Energy Optimization Endpoint (`POST /optimize-energy`)
-```bash
-curl -X POST http://localhost:8000/optimize-energy \
-  -H "Content-Type: application/json" \
-  -d '{
-    "scenario_id": "GRID-101",
-    "operator_notes": [
-      "Solar output will drop to about 20% from 1 PM to 3 PM.",
-      "Do not charge the battery between 2 PM and 4 PM.",
-      "The cafeteria menu changes tomorrow."
-    ],
-    "hours": [
-      {"hour": 0, "demand_kwh": 180, "solar_kwh": 0, "tariff_bdt_per_kwh": 7},
-      {"hour": 1, "demand_kwh": 170, "solar_kwh": 0, "tariff_bdt_per_kwh": 7},
-      {"hour": 2, "demand_kwh": 160, "solar_kwh": 0, "tariff_bdt_per_kwh": 6},
-      {"hour": 3, "demand_kwh": 160, "solar_kwh": 0, "tariff_bdt_per_kwh": 6},
-      {"hour": 4, "demand_kwh": 165, "solar_kwh": 0, "tariff_bdt_per_kwh": 6},
-      {"hour": 5, "demand_kwh": 175, "solar_kwh": 0, "tariff_bdt_per_kwh": 7},
-      {"hour": 6, "demand_kwh": 190, "solar_kwh": 10, "tariff_bdt_per_kwh": 9},
-      {"hour": 7, "demand_kwh": 210, "solar_kwh": 30, "tariff_bdt_per_kwh": 11},
-      {"hour": 8, "demand_kwh": 230, "solar_kwh": 70, "tariff_bdt_per_kwh": 14},
-      {"hour": 9, "demand_kwh": 245, "solar_kwh": 110, "tariff_bdt_per_kwh": 16},
-      {"hour": 10, "demand_kwh": 255, "solar_kwh": 150, "tariff_bdt_per_kwh": 18},
-      {"hour": 11, "demand_kwh": 260, "solar_kwh": 180, "tariff_bdt_per_kwh": 18},
-      {"hour": 12, "demand_kwh": 265, "solar_kwh": 200, "tariff_bdt_per_kwh": 17},
-      {"hour": 13, "demand_kwh": 260, "solar_kwh": 190, "tariff_bdt_per_kwh": 16},
-      {"hour": 14, "demand_kwh": 250, "solar_kwh": 160, "tariff_bdt_per_kwh": 15},
-      {"hour": 15, "demand_kwh": 245, "solar_kwh": 110, "tariff_bdt_per_kwh": 16},
-      {"hour": 16, "demand_kwh": 250, "solar_kwh": 60, "tariff_bdt_per_kwh": 20},
-      {"hour": 17, "demand_kwh": 265, "solar_kwh": 15, "tariff_bdt_per_kwh": 25},
-      {"hour": 18, "demand_kwh": 285, "solar_kwh": 0, "tariff_bdt_per_kwh": 32},
-      {"hour": 19, "demand_kwh": 295, "solar_kwh": 0, "tariff_bdt_per_kwh": 35},
-      {"hour": 20, "demand_kwh": 285, "solar_kwh": 0, "tariff_bdt_per_kwh": 30},
-      {"hour": 21, "demand_kwh": 255, "solar_kwh": 0, "tariff_bdt_per_kwh": 20},
-      {"hour": 22, "demand_kwh": 215, "solar_kwh": 0, "tariff_bdt_per_kwh": 12},
-      {"hour": 23, "demand_kwh": 185, "solar_kwh": 0, "tariff_bdt_per_kwh": 8}
-    ],
-    "battery": {
-      "capacity_kwh": 500,
-      "initial_energy_kwh": 200,
-      "minimum_energy_kwh": 50,
-      "max_charge_kwh_per_hour": 100,
-      "max_discharge_kwh_per_hour": 100
-    }
-  }'
-```
-
----
-
-## 🐳 Docker Deployment
-
-### Building & Running with Docker
-```bash
-# Build Docker image
-docker build -t gridwise-api .
-
-# Run Docker container
-docker run -d -p 8000:8000 -e GEMINI_API_KEY="your_api_key_here" --name gridwise_app gridwise-api
-```
-
-### Docker Compose
-```bash
-docker-compose up -d
 ```
 
 ---
 
 ## 🔒 Security & Secrets Policy
 
-- **No Secrets in Repo**: No API keys, passwords, or credentials are hardcoded or committed to git.
-- **Environment Variables**: API keys are injected at runtime via environment variable `GEMINI_API_KEY`.
-- **Safe Error Responses**: Internal exception handlers strip raw stack traces and credentials from HTTP 500 error messages.
+- **No Secrets in Repo**: API keys are excluded via `.gitignore` and `.vercel` exclusions.
+- **Environment Variables**: Credentials are configured dynamically at runtime.
