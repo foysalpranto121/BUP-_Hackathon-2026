@@ -34,12 +34,13 @@ Your job is to read 1 to 3 natural-language operator notes and convert each note
 - Hours are whole-hour intervals from 0 through 23 in ascending order.
 - Time windows are start-inclusive and end-exclusive.
   Example: "1 PM to 3 PM" -> hours [13, 14]
+  Example: "between 11 AM and 2 PM" -> hours [11, 12, 13] (11 AM = 11, 2 PM = 14)
   Example: "noon until 2 PM" -> hours [12, 13]
   Example: "2 AM to 5 AM" -> hours [2, 3, 4]
   Example: "6 PM until 9 PM" -> hours [18, 19, 20]
 
 ### CRITICAL RULES:
-- Return a JSON array containing EXACTLY ONE object per operator note, in note_index order (0, 1, ... N-1).
+- Return a JSON object with a key `directives` containing a JSON array with EXACTLY ONE object per operator note, in note_index order (0, 1, ... N-1).
 - Each object MUST contain:
   - `note_index`: integer (0, 1, ...)
   - `applies`: boolean (true for active directives, false ONLY for no_op)
@@ -49,7 +50,47 @@ Your job is to read 1 to 3 natural-language operator notes and convert each note
 """
 
 
-def call_llm_api(operator_notes: List[str]) -> List[Dict[str, Any]]:
+def call_openai_api(operator_notes: List[str]) -> List[Dict[str, Any]]:
+    """Calls OpenAI API using the openai SDK."""
+    if not settings.OPENAI_API_KEY:
+        logger.warning("No OPENAI_API_KEY found. Falling back.")
+        return fallback_rule_parser(operator_notes)
+
+    user_prompt = "Interpret the following operator notes:\n"
+    for idx, note in enumerate(operator_notes):
+        user_prompt += f"Note {idx}: \"{note}\"\n"
+    user_prompt += "\nReturn a JSON object containing a 'directives' array matching the requested schema."
+
+    try:
+        import openai
+        client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+        response = client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.0
+        )
+        raw_text = response.choices[0].message.content
+        logger.info(f"OpenAI LLM Raw Output: {raw_text}")
+        data = json.loads(raw_text)
+        
+        if isinstance(data, list):
+            return data
+        elif isinstance(data, dict):
+            for k in ["directives", "directive_interpretation", "interpretations", "data"]:
+                if k in data and isinstance(data[k], list):
+                    return data[k]
+            return [data]
+    except Exception as e:
+        logger.error(f"Error calling OpenAI API: {e}. Falling back to rule parser.")
+
+    return fallback_rule_parser(operator_notes)
+
+
+def call_gemini_api(operator_notes: List[str]) -> List[Dict[str, Any]]:
     """Calls Gemini API using google-genai or google.generativeai SDK."""
     api_key = settings.GEMINI_API_KEY
     if not api_key:
@@ -88,7 +129,7 @@ def call_llm_api(operator_notes: List[str]) -> List[Dict[str, Any]]:
             )
             raw_text = response.text
 
-        logger.info(f"LLM Raw Output: {raw_text}")
+        logger.info(f"Gemini LLM Raw Output: {raw_text}")
         data = json.loads(raw_text)
         if isinstance(data, list):
             return data
@@ -99,9 +140,19 @@ def call_llm_api(operator_notes: List[str]) -> List[Dict[str, Any]]:
         elif isinstance(data, dict):
             return [data]
     except Exception as e:
-        logger.error(f"Error calling LLM API: {e}. Falling back to rule parser.")
+        logger.error(f"Error calling Gemini API: {e}. Falling back to rule parser.")
 
     return fallback_rule_parser(operator_notes)
+
+
+def call_llm_api(operator_notes: List[str]) -> List[Dict[str, Any]]:
+    """Dispatches to OpenAI, Gemini, or Fallback based on provider settings."""
+    if settings.LLM_PROVIDER == "openai" or (settings.OPENAI_API_KEY and not settings.GEMINI_API_KEY):
+        return call_openai_api(operator_notes)
+    elif settings.LLM_PROVIDER == "gemini" or settings.GEMINI_API_KEY:
+        return call_gemini_api(operator_notes)
+    else:
+        return fallback_rule_parser(operator_notes)
 
 
 def fallback_rule_parser(operator_notes: List[str]) -> List[Dict[str, Any]]:
@@ -194,7 +245,6 @@ def fallback_rule_parser(operator_notes: List[str]) -> List[Dict[str, Any]]:
                 m_pct = re.search(r'(\d+)%\s*of\s*(?:the\s*)?battery', text)
                 if m_pct:
                     pct = float(m_pct.group(1))
-                    # Assuming standard 200 kWh battery capacity for percentage sample cases
                     reserve_val = (pct / 100.0) * 200.0
 
             results.append({
